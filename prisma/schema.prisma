@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://root@localhost:3306/SOILREPORT"
+  // shadowDatabaseUrl = "mysql://root@localhost:3306/SOILREPORT"
+}
+
+model Location {
+
+  locationId Int @id @default(autoincrement()) @map("LOCATION_ID")
+  lat Decimal @db.Decimal(8,6) @map("LATITUDE") 
+  lng Decimal @db.Decimal(9,6) @map("LONGITUDE")
+  placeId Int @map("PLACE_ID")
+  place Place @relation(fields: [placeId], references: [placeId])
+  soil SoilType[]
+  @@unique([lat, lng])
+  //TODO additional fields may go here
+}
+
+model SoilType {
+
+  locationId Int @map("LOCATION_ID")
+  depth Int @db.SmallInt @map("DEPTH")
+  type Int @db.TinyInt @map("TYPE")
+  location Location @relation(fields: [locationId], references: [locationId])
+
+  @@id([locationId, depth])
+  @@unique([locationId, depth, type])
+}
+
+model Place {
+  placeId Int @map("PLACE_ID") @id @default(autoincrement())
+  placeName String @db.VarChar(100) @map("PLACE_NAME")
+  locations Location[]
+}
