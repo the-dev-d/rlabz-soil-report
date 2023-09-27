@@ -11,9 +11,11 @@ export async function GET({url}) {
     const locations = await prisma.location.findMany({
         select: {
             lat: true,
-            lng: true
+            lng: true,
+            pinId: true,
+            pin: true
         },
-        where: condition
+        where: condition,
     });
     return new Response(JSON.stringify({response: locations}));
 }

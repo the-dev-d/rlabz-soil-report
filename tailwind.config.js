@@ -8,6 +8,9 @@ export default {
       },
       zIndex: {
         "1100": "1100"
+      },
+      colors: {
+        "primary-low": "rgba(239, 165, 53, 0.5)"
       }
     },
   },

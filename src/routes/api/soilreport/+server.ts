@@ -6,7 +6,9 @@ import type { Place } from '@prisma/client';
 export async function POST(e) {
 
     try {
+
         const body = await e.request.json();
+
         if(!body.position) {
             throw new Error("Position required")
         }
@@ -29,31 +31,66 @@ export async function POST(e) {
             throw new Error("Invalid report format");
         }
 
-        let place:Place|null = placeParse.data;
+        let {lat, lng, pinId} = positionParse.data;
+        pinId = pinId !== undefined ? pinId : "0000ff"; // TO change to zero
 
-        if(place.placeId === 0) {
-            const current = await prisma.place.findFirst({where : {placeName: place.placeName}});
-            if(!current)
-                place = await prisma.place.create({data: {placeName: place.placeName}})
-            else
-                place = current;
-        } else {
-            place = await prisma.place.findFirst({where : {placeName: place.placeName}});
-            if(!place)
-                throw new Error("Place not found");
-        }
+        lat = roundNumber(lat, 6);
+        lng = roundNumber(lng, 6);
 
-        const {lat,lng} = positionParse.data;
-        const position = {lat: roundNumber(lat, 6), lng: roundNumber(lng, 6), placeId: place.placeId};
+        const {placeId, placeName} = placeParse.data;
+
+        let place = await prisma.place.upsert({
+            where: {
+                placeName
+            },
+            create: {
+                placeName
+            },
+            update: {
+                placeName
+            }
+        });
+
+        console.log(pinId);
         
-        let pos = await prisma.location.findFirst({where:position});
+        const postionSave = await prisma.location.upsert({
+            where: {
+                lat_lng: {
+                    lat, lng
+                }
+            },
+            create: {
+                lat,lng,
+                placeId: place.placeId,
+                pinId: pinId
+            },
+            update: {
+                pinId
+            }
+        })
 
-        if(!pos) {
-            pos = await prisma.location.create({
-                data: position
-            })
-        }
-        const {locationId} = pos;
+
+        //let place:Place|null = placeParse.data;
+        // if(place.placeId === 0) {
+        //     const current = await prisma.place.findFirst({where : {placeName: place.placeName}});
+        //     if(!current)
+        //         place = await prisma.place.create({data: {placeName: place.placeName}})
+        //     else
+        //         place = current;
+        // } else {
+        //     place = await prisma.place.findFirst({where : {placeName: place.placeName}});
+        //     if(!place)
+        //         throw new Error("Place not found");
+        // }
+        //const {lat,lng,pinId} = positionParse.data;
+        // const position = {lat: roundNumber(lat, 6), lng: roundNumber(lng, 6), placeId: place.placeId};        
+        // let pos = await prisma.location.findFirst({where:position});
+        // if(!pos) {
+        //     pos = await prisma.location.create({
+        //         data: {...position, pinId}
+        //     })
+        // }
+        // const {locationId} = pos;
 
         const newData: SoilData[] = [];
         const rmData: SoilData[] = [];
@@ -68,23 +105,24 @@ export async function POST(e) {
             }
         })
 
-        const rmCondition = rmData.map( ({depth}) => ({ locationId, depth }));
+        const rmCondition = rmData.map( ({locationId, depth}) => ({ locationId, depth }));
 
-       if(rmCondition.length) {
-        await prisma.soilType.deleteMany({
-            where: {
-                AND: rmCondition
-            } 
-        })
-       }
+        if(rmCondition.length) {
+         await prisma.soilType.deleteMany({
+             where: {
+                 AND: rmCondition
+             } 
+         })
+        }
 
         const response = await prisma.soilType.createMany({
-            data: newData.map( ({type, depth})=> ({type, depth, locationId}) )
+            data: newData.map( ({type, depth})=> ({type, depth, locationId: postionSave.locationId}) )
         });
         
-        return new Response(JSON.stringify({message:"success", response}));
+        return new Response(JSON.stringify({message:"success"}));
 
     } catch (error:any) {
+        console.log(error);
         return new Response(error.message);
     }
 }
@@ -103,7 +141,8 @@ export async function GET(e) {
             lat, lng
         },
         include: {
-            place: true
+            place: true,
+            pin: true
         }
     })
     const report = await prisma.soilType.findMany({

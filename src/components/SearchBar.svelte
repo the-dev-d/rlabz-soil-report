@@ -37,22 +37,22 @@
     }
     function handleDeselection() {
         input = "";
-        selected = false;
-        //TODO: make the markers as default
+        selected = false;        
+        dispatcher('deselect', {});
     }
     const dispatcher = createEventDispatcher();
 
 </script>
 
-<div class="w-full overflow-hidden bg-white border-gray-300 shadow-md rounded-2xl border-1">
+<div class="flex-auto overflow-hidden bg-white border-gray-300 rounded-3xl border-1">
     <div class="flex items-center border-b-1">
         {#if selected}
-            <div class="flex items-center w-full p-4 focus:outline-none">
+            <div class="flex items-center w-full p-3.5 focus:outline-none">
                 <span>Search in {input} <i on:click={handleDeselection} class="ml-2 fa-solid fa-xmark"></i></span>
             </div>
         {:else}
-            <input on:keyup={handleAutoComplete} bind:value={input} class="w-full p-4 focus:outline-none" placeholder="Search Place or Pincode" type="text" name="search" id="search">
-            <i on:click={handleSearch} class="p-4 m-1 rounded-full fa-solid fa-magnifying-glass hover:bg-slate-100"></i>
+            <input on:keyup={handleAutoComplete} bind:value={input} class="w-full p-2 ml-2 focus:outline-none" placeholder="Search by Place" type="text" name="search" id="search">
+            <i on:click={handleSearch} class="p-3.5 m-1 rounded-full fa-solid fa-magnifying-glass hover:bg-slate-100"></i>
         {/if}
     </div>
     <div class="max-h-[50%] overflow-y-auto bg-white flex flex-col">

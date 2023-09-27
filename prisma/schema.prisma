@@ -17,7 +17,9 @@ model Location {
   lat Decimal @db.Decimal(8,6) @map("LATITUDE") 
   lng Decimal @db.Decimal(9,6) @map("LONGITUDE")
   placeId Int @map("PLACE_ID")
+  pinId String @db.VarChar(6) @map("PINID")
   place Place @relation(fields: [placeId], references: [placeId])
+  pin Pin @relation(fields: [pinId], references: [colorCode])
   soil SoilType[]
   @@unique([lat, lng])
   //TODO additional fields may go here
@@ -36,6 +38,13 @@ model SoilType {
 
 model Place {
   placeId Int @map("PLACE_ID") @id @default(autoincrement())
-  placeName String @db.VarChar(100) @map("PLACE_NAME")
+  placeName String @db.VarChar(100) @map("PLACE_NAME") @unique
   locations Location[]
+}
+
+model Pin {
+  colorCode String @db.VarChar(6) @id @map("COLOR_CODE")
+  mark String @db.VarChar(30) @map("MARK")
+  pin String @db.VarChar(30) @map("PIN")
+  location Location[]
 }
